@@ -29,6 +29,12 @@ help:
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 
+unix:
+	find . "*.txt" | xargs dos2unix
+	find . "*.md" | xargs dos2unix
+	find . "*.py" | xargs dos2unix
+	dos2unix Makefile
+
 clean-build: ## remove build artifacts
 	rm -fr build/
 	rm -fr dist/
@@ -48,11 +54,10 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 
 lint: ## check style with flake8
-	flake8 mootdx tests
+	flake8 --max-line-length=200
 
 test: ## run tests quickly with the default Python
-	py.test
-	
+	py.test tests
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -78,10 +83,13 @@ release: clean ## package and upload a release
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
 
+archive: clean
+	git archive --format zip --output ../mootdx-master.zip master
+
 dist: clean ## builds source and wheel package
 	python setup.py sdist
 	python setup.py bdist_wheel
-	ls -l dist
+	ls -lh dist
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install

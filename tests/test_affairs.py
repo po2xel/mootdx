@@ -1,38 +1,41 @@
-# -*- coding: utf-8 -*-
-import os
+import glob
 import unittest
+from pathlib import Path
 
-from mootdx.affairs import Affairs
+from mootdx.affair import Affair
+from mootdx.logger import logger
 
 
-class TestAffairs(unittest.TestCase):
+class TestAffair(unittest.TestCase):
+    files = []
 
-    # def test_parse_all(self):
-    #     data = Affairs.parse(downdir='tmp')
-    #     self.assertTrue(data)
+    downdir = 'tests/fixtures/tmp'
 
-    # def test_parse_one(self):
-    #     data = Affairs.parse(downdir='tmp', filename='gpcw19960630.zip')
-    #     self.assertTrue(data)
-    def setUp(self):
-        if not os.path.isdir('tmp'):
-            os.mkdir('tmp')
+    def setup_class(self) -> None:
+        logger.info('获取文件列表')
+        self.files = [x['filename'] for x in Affair.files()]
+
+    def teardown_class(self):
+        [Path(x).unlink() for x in glob.glob(f'{self.downdir}/*.*')]
+        Path(self.downdir).rmdir()
+
+    def test_parse_all(self):
+        data = Affair.parse(downdir=self.downdir)
+        print(data)
+        self.assertIsNone(data)
+
+    def test_parse_one(self):
+        data = Affair.parse(downdir=self.downdir, filename=self.files[-1])
+        self.assertIsNotNone(data)
 
     def test_parse_export(self):
-        Affairs.parse(downdir='tmp', filename='gpcw19960630.zip').to_csv('gpcw19960630.csv')
-        self.assertTrue(os.path.exists('gpcw19960630.csv'))
-
-    def test_files(self):
-        data = Affairs.files()
-        self.assertTrue(type(data) is list)
-
-    # def test_fetch_all(self):
-    #     data = Affairs.fetch(downdir='tmp')
-    #     self.assertTrue(data)
+        csv_file = Path(self.downdir, self.files[1] + '.csv')
+        Affair.parse(downdir=self.downdir, filename=self.files[-1]).to_csv(csv_file)
+        self.assertTrue(csv_file.exists())
 
     def test_fetch_one(self):
-        Affairs.fetch(downdir='tmp', filename='gpcw19960630.zip')
-        self.assertTrue(os.path.exists('gpcw19960630.csv'))
+        Affair.fetch(downdir=self.downdir, filename=self.files[-1])
+        self.assertTrue(Path(self.downdir, self.files[-1]).exists())
 
 
 if __name__ == '__main__':

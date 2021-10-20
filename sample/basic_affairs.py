@@ -1,10 +1,14 @@
-from mootdx.affairs import Affairs
+from prettytable import PrettyTable
 
-Affairs.parse(downdir='tmp') # 解析全部
-Affairs.parse(downdir='tmp', filename='gpcw19960630.zip') # 解析文件
-Affairs.parse(downdir='tmp', filename='gpcw19960630.zip').to_csv('gpcw19960630.csv') # 转存文件
+from mootdx.affair import Affair
 
-Affairs.files() # 显示列表
-Affairs.fetch(filelist=True) # 显示列表
-Affairs.fetch(downdir='tmp') # 下载全部
-Affairs.fetch(downdir='tmp', filename='gpcw19960630.zip') # 下载文件
+df = Affair.files()
+
+t = PrettyTable(['filename', 'filesize', 'hash'])
+t.align['filename'] = 'l'
+t.align['filesize'] = 'l'
+t.align['hash'] = 'l'
+t.padding_width = 1
+
+[t.add_row([x['filename'], x['filesize'], x['hash']]) for x in df]
+print(t)
