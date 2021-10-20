@@ -4,7 +4,7 @@ from loguru import logger
 
 log = logger
 log.remove()
-log.add(sink=sys.stdout, level='INFO')
+log.add(sink=sys.stderr, level='WARNING')
 
 
 def getLogger(level='INFO', **kwargs):

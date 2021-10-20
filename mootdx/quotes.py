@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import pandas
 import pandas as pd
@@ -14,6 +15,7 @@ from mootdx import config
 from mootdx import server
 from mootdx.consts import MARKET_SH
 from mootdx.logger import log
+from mootdx.utils import get_config_path
 from mootdx.utils import get_stock_market
 from mootdx.utils import get_stock_markets
 from mootdx.utils import to_data
@@ -43,7 +45,7 @@ class BaseQuotes(object):
 
         self.timeout = timeout
 
-        config.setup()
+        Path(get_config_path('config.json')).exists() or server.bestip()
 
     def __del__(self):
         log.debug('__del__')
@@ -89,7 +91,7 @@ def check_empty(value):
 class StdQuotes(BaseQuotes):
     """ 股票市场实时行情 """
 
-    def __init__(self, bestip=False, timeout=15, **kwargs):
+    def __init__(self, bestip=False, timeout=15, ip=None, port=7709, **kwargs):
         """ 构造函数
 
         :param bestip:  最有服务器Ip
@@ -100,12 +102,10 @@ class StdQuotes(BaseQuotes):
         super(StdQuotes, self).__init__(bestip=bestip, timeout=timeout, **kwargs)
 
         try:
-            config.get('SERVER').get('HQ')[0]
+            default = config.get('SERVER').get('HQ')[0]
+            self.bestip = (ip, port) if ip is not None else config.get('BESTIP').get('HQ', default)
         except ValueError:
             server.bestip()
-        finally:
-            default = config.get('SERVER').get('HQ')[0]
-            self.bestip = config.get('BESTIP').get('HQ', default)
 
         self.client = TdxHq_API(raise_exception=False, **kwargs)
         self.client.connect(*self.bestip)
@@ -403,7 +403,7 @@ class ExtQuotes(BaseQuotes):
 
     bestip = ('112.74.214.43', 7727)
 
-    def __init__(self, bestip=False, timeout=15, **kwargs):
+    def __init__(self, bestip=False, timeout=15, ip=None, port=7727, **kwargs):
         """ 构造函数
 
         :param bestip:  最优服务器IP
@@ -412,15 +412,11 @@ class ExtQuotes(BaseQuotes):
         """
         super(ExtQuotes, self).__init__(bestip=bestip, timeout=timeout, **kwargs)
 
-        log.warning('目前扩展市场行情接口已经失效, 后期有望修复.')
-
         try:
-            config.get('SERVER').get('EX')[0]
+            default = config.get('SERVER').get('EX')[0]
+            self.bestip = (ip, port) if ip is not None else config.get('BESTIP').get('EX', default)
         except ValueError:
             server.bestip()
-        finally:
-            default = config.get('SERVER').get('EX')[0]
-            self.bestip = config.get('BESTIP').get('EX', default)
 
         self.client = TdxExHq_API(**kwargs)
         self.client.connect(*self.bestip)
