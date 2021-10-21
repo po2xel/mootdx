@@ -1,14 +1,10 @@
 from abc import ABC
 from pathlib import Path
 
-from pytdx.reader import BlockReader
-from pytdx.reader import CustomerBlockReader
-from pytdx.reader import TdxExHqDailyBarReader
-from pytdx.reader import TdxLCMinBarReader
-from pytdx.reader import TdxMinBarReader
+from pytdx.reader import BlockReader, CustomerBlockReader, TdxExHqDailyBarReader, TdxLCMinBarReader, TdxMinBarReader
 
 from mootdx import utils
-from mootdx.consts import TYPE_GROUP, TYPE_FLATS
+from mootdx.consts import TYPE_FLATS, TYPE_GROUP
 from mootdx.contrib.compat import MooTdxDailyBarReader
 from mootdx.utils import get_stock_market
 
@@ -59,10 +55,9 @@ class ReaderBase(ABC):
         suffix = suffix if isinstance(suffix, list) else [suffix]
 
         for ex_ in suffix:
-            ex_ = ex_.strip('.')
-            vipdoc = Path(self.tdxdir) / 'vipdoc' / market / subdir / f'{prefix}{symbol}.{ex_}'
+            vipdoc = Path(self.tdxdir, 'vipdoc', market, subdir, f'{prefix}{symbol}').with_suffix(ex_)
 
-            if Path(vipdoc).exists():
+            if vipdoc.exists():
                 return vipdoc
 
         return None
@@ -90,7 +85,7 @@ class StdReader(ReaderBase):
         :return: pd.dataFrame or None
         """
         subdir = 'fzline' if str(suffix) == '5' else 'minline'
-        suffix = ['lc5', '5'] if str(suffix) == '5' else ['lc1', '1']
+        suffix = ['.lc5', '.5'] if str(suffix) == '5' else ['.lc1', '.1']
         symbol = self.find_path(symbol, subdir=subdir, suffix=suffix)
 
         if symbol is not None:
