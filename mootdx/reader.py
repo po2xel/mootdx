@@ -73,7 +73,7 @@ class StdReader(ReaderBase):
         :return: pd.dataFrame or None
         """
         reader = MooTdxDailyBarReader()
-        vipdoc = self.find_path(symbol=symbol, subdir='lday', suffix='day')
+        vipdoc = self.find_path(symbol=symbol, subdir='lday', suffix='.day')
 
         return reader.get_df(str(vipdoc)) if vipdoc else None
 
@@ -156,7 +156,7 @@ class ExtReader(ReaderBase):
         :return: pd.dataFrame or None
         """
 
-        vipdoc = self.find_path(symbol=symbol, subdir='lday', suffix='day')
+        vipdoc = self.find_path(symbol=symbol, subdir='lday', suffix='.day')
         return self.reader.get_df(str(vipdoc)) if vipdoc else None
 
     def minute(self, symbol=None):
@@ -168,7 +168,7 @@ class ExtReader(ReaderBase):
         if not symbol:
             return None
 
-        vipdoc = self.find_path(symbol=symbol, subdir='minline', suffix=['lc1', '1'])
+        vipdoc = self.find_path(symbol=symbol, subdir='minline', suffix=['.lc1', '.1'])
         return self.reader.get_df(str(vipdoc)) if vipdoc else None
 
     def fzline(self, symbol=None):
@@ -177,5 +177,5 @@ class ExtReader(ReaderBase):
         :return: pd.dataFrame or None
         """
 
-        vipdoc = self.find_path(symbol=symbol, subdir='fzline', suffix='lc5')
+        vipdoc = self.find_path(symbol=symbol, subdir='fzline', suffix='.lc5')
         return self.reader.get_df(str(vipdoc)) if symbol else None
