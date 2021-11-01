@@ -6,6 +6,7 @@ from pytdx.reader import BlockReader, CustomerBlockReader, TdxExHqDailyBarReader
 from mootdx import utils
 from mootdx.consts import TYPE_FLATS, TYPE_GROUP
 from mootdx.contrib.compat import MooTdxDailyBarReader
+from mootdx.logger import log
 from mootdx.utils import get_stock_market
 
 
@@ -15,8 +16,8 @@ class Reader(object):
     def factory(market='std', **kwargs):
         """ Reader 工厂方法
 
-        :param market:  std 标准市场, ext 扩展市场
-        :param kwargs:
+        :param market: std 标准市场, ext 扩展市场
+        :param kwargs: 可变参数
         :return:
         """
         if market == 'ext':
@@ -42,7 +43,7 @@ class ReaderBase(ABC):
 
         self.tdxdir = tdxdir
 
-    def find_path(self, symbol=None, subdir='lday', suffix=None):
+    def find_path(self, symbol=None, subdir='lday', suffix=None, **kwargs):
         """ 自动匹配文件路径，辅助函数
 
         :param symbol:
@@ -69,7 +70,7 @@ class StdReader(ReaderBase):
     def daily(self, symbol=None):
         """ 获取日线数据
 
-        :param symbol:
+        :param symbol: 证券代码
         :return: pd.dataFrame or None
         """
         reader = MooTdxDailyBarReader()
@@ -80,8 +81,8 @@ class StdReader(ReaderBase):
     def minute(self, symbol=None, suffix=1):
         """ 获取1, 5分钟线
 
-        :param suffix:
-        :param symbol:
+        :param suffix: 文件前缀
+        :param symbol: 证券代码
         :return: pd.dataFrame or None
         """
         subdir = 'fzline' if str(suffix) == '5' else 'minline'
@@ -122,12 +123,13 @@ class StdReader(ReaderBase):
 
         return CustomerBlockReader().get_df(str(vipdoc), types_) if vipdoc.is_dir() else None
 
-    def block(self, symbol='', group=False):
+    def block(self, symbol='', group=False, **kwargs):
         """ 获取板块数据
 
         参考: http://blog.sina.com.cn/s/blog_623d2d280102vt8y.html
-        :param symbol: 板块文件名称
-        :param group:
+
+        :param symbol:  板块文件
+        :param group:   分组解析
         :return: pd.dataFrame or None
         """
 
@@ -137,8 +139,15 @@ class StdReader(ReaderBase):
         symbol = symbol.replace(suffix, '')
         suffix = suffix.strip('.')
 
-        vipdoc = Path(self.tdxdir) / 'T0002' / 'hq_cache' / f'{symbol}.{suffix}'
+        if 'incon' in symbol:
+            vipdoc = Path(self.tdxdir) / f'{symbol}.{suffix}'
+        else:
+            vipdoc = Path(self.tdxdir) / 'T0002' / 'hq_cache' / f'{symbol}.{suffix}'
+
         types_ = TYPE_GROUP if group else TYPE_FLATS
+
+        if kwargs.get('debug'):
+            return str(vipdoc)
 
         return BlockReader().get_df(str(vipdoc), types_) if vipdoc.exists() else None
 
@@ -156,7 +165,7 @@ class ExtReader(ReaderBase):
         :return: pd.dataFrame or None
         """
 
-        vipdoc = self.find_path(symbol=symbol, subdir='lday', suffix='.day')
+        vipdoc = self.find_path(symbol=symbol, subdir='lday', suffix='day')
         return self.reader.get_df(str(vipdoc)) if vipdoc else None
 
     def minute(self, symbol=None):
@@ -168,7 +177,7 @@ class ExtReader(ReaderBase):
         if not symbol:
             return None
 
-        vipdoc = self.find_path(symbol=symbol, subdir='minline', suffix=['.lc1', '.1'])
+        vipdoc = self.find_path(symbol=symbol, subdir='minline', suffix=['lc1', '1'])
         return self.reader.get_df(str(vipdoc)) if vipdoc else None
 
     def fzline(self, symbol=None):
@@ -177,5 +186,5 @@ class ExtReader(ReaderBase):
         :return: pd.dataFrame or None
         """
 
-        vipdoc = self.find_path(symbol=symbol, subdir='fzline', suffix='.lc5')
+        vipdoc = self.find_path(symbol=symbol, subdir='fzline', suffix='lc5')
         return self.reader.get_df(str(vipdoc)) if symbol else None
