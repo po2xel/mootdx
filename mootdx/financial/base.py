@@ -1,7 +1,7 @@
 import struct
 
 from .. import config
-from ..config import settings
+from ..logger import log
 
 
 def reporthook(downloaded, total_size):
@@ -38,10 +38,13 @@ class BaseFinancial:
     def __init__(self, mode='content'):
         self.mode = mode
 
+        config.setup()
+
         try:
-            default = settings.get('SERVER').get('GP')[0][1:]
+            default = config.get('SERVER').get('GP')[0][1:]
             self.bestip = config.get('BESTIP').get('GP', default)
-        except ValueError:
+        except ValueError as ex:
+            log.exception(ex)
             self.bestip = ('106.14.95.149', 7727)
 
     def fetch_and_parse(self, report_hook=None, downdir=None, chunk_size=51200, *args, **kwargs):

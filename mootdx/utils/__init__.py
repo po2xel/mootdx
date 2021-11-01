@@ -11,6 +11,7 @@ from tqdm import tqdm
 from mootdx.consts import MARKET_SH
 from mootdx.consts import MARKET_SZ
 from mootdx.logger import log
+from mootdx.utils.adjust import to_adjust
 
 
 def get_stock_markets(symbols=None):
@@ -41,8 +42,8 @@ def get_stock_market(symbol='', string=False):
 
     market = None
 
-    if symbol.startswith(('sh', 'sz')):
-        market = symbol[:2]
+    if symbol.startswith(('sh', 'sz', 'SH', 'SZ')):
+        market = symbol[:2].lower()
 
     elif symbol.startswith(('50', '51', '60', '68', '90', '110', '113', '132', '204')):
         market = 'sh'
@@ -103,7 +104,7 @@ def md5sum(downfile):
         return None
 
 
-def to_data(v):
+def to_data(v, **kwargs):
     """
     数值转换为 pd.DataFrame
 
@@ -111,24 +112,41 @@ def to_data(v):
     :return: pd.DataFrame
     """
 
+    symbol = kwargs.get('symbol')
+    adjust = kwargs.get('adjust', None)
+
+    if adjust in ['01', 'qfq', 'before']:
+        adjust = 'qfq'
+    elif adjust in ['02', 'hfq', 'after']:
+        adjust = 'hfq'
+    else:
+        adjust = None
+
     # 空值
     if not v:
         return pd.DataFrame(data=[])
 
     # DataFrame
     if isinstance(v, DataFrame):
-        return v
+        result = v
 
     # 列表
-    if isinstance(v, list):
-        return pd.DataFrame(data=v) if len(v) else None
+    elif isinstance(v, list):
+        result = pd.DataFrame(data=v) if len(v) else None
 
     # 字典
-    if isinstance(v, dict):
-        return pd.DataFrame(data=[v])
+    elif isinstance(v, dict):
+        result = pd.DataFrame(data=[v])
 
     # 空值
-    return pd.DataFrame(data=[])
+    else:
+        result = pd.DataFrame(data=[])
+
+    if adjust and adjust in ['qfq', 'hfq'] and symbol:
+        from mootdx.utils.adjust import fq_factor
+        result = to_adjust(result, symbol=symbol, adjust=adjust)
+
+    return result
 
 
 def to_file(df, filename=None):
@@ -199,7 +217,7 @@ def get_config_path(config='config.json'):
     pathname = Path(filename).parent
 
     Path(pathname).exists() or Path(pathname).mkdir(parents=True)
-    Path(filename).exists() or Path(filename).write_text('{}')
+    # Path(filename).exists() or Path(filename).write_text('None')
 
     return str(filename)
 
